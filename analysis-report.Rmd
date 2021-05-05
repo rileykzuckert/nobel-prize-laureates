@@ -1,0 +1,260 @@
+---
+title: "Anything He Can Do, She Can Do Better… But Only If Given the Chance"
+author: "Riley Zuckert"
+date: "Spring 2021"
+output: 
+  html_document:
+    toc: true
+    number_section: true
+---
+
+```{r setup, include=FALSE, message=FALSE}
+library(ggthemes)
+library(tidyverse)
+#install.packages('rnaturalearth')
+library(rnaturalearth)
+#install.packages('sp')
+library(sp)
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+There is an overwhelming disparity between the opportunities of men compared to the opportunities of women. Women's rights, however, have undergone transformations throughout the decades, allowing women equal advancements in their education, careers, and social lives in Western and many Eastern Hemisphere countries, leveling the accessibility to these human rights.
+
+The 1848 Seneca Falls Woman's Rights Convention began the movement for women's rights, paving the way for women's right to vote (1920), the Equal Pay Act (1963), and to countless other social reforms, among broad-based economic and political equality. 
+
+But, with limitations placed on women's freedom historically, and presently in many Eastern countries, the accolades and recognition awarded to men greatly overshadow the accomplishments of women. Bans on education and academic research have sequestered women-driven innovation, despite the numbers of women who bear the same intellect, drive, and curiosity as our esteemed men. 
+
+The Nobel Prizes, a combination of six international prizes for those who have granted humankind the greatest benefit, are awarded to the world's leaders and revolutionaries, recognizing both men and women, as well as on rare occassions, organizations. However, despite women's innovation and activism, the Nobel gender gap between men and women is incredible.
+
+Although conditions for women's rights have improved, there are still seldom women recipients of the Nobel Prize. The question remains of what causes this disparity between laureates, but through analysis of Nobel Prize data, I aim to analyze trends in women laureates to hypothesize an answer.
+
+
+# Research Questions
+
+My motivation for the following research questions are to establish Nobel Prize background and to discover potential reasons for the why there is such a great disparity between male and female Nobel Prize laureates.
+
+1. Which country has the most Nobel Prize laureates?
+1. Which continent has the most Nobel Prize laureates?
+1. Of the total laureates, what percentage are women?
+1. Is there a correlation between the decade and the number of women laureates?
+1. Which category of the six Nobel Prizes is most awarded to women and to men?
+
+
+# Methods
+
+This study seeks to answer the research questions above through a quantitative data analysis. I utilized the data [Women in Nobel Prize (1901-2019)](https://www.kaggle.com/mbogernetto/women-in-nobel-prize-19012019?select=nobel_prize_awarded_country_details_1901_2019.csv), and chose to use the specific data set 'nobel_prize_awarded_country_details_1901_2019.csv'. The variables in the data set include:
+
+* name of Nobel Prize laureate
+* year Prize awarded
+* country laureate is related to for award
+* countries the laureate is related to
+* category of Prize
+* gender of laureate
+* details of the laureate
+
+Modifications to the data set were also made for purposes of analysis and introduced the variables continent, country code, and decade.
+
+
+## Data Description
+
+```{r, message=FALSE}
+# read in data
+nobelprize_clean = read_csv('nobelprizelaureates.csv')
+# glimpse data
+glimpse(nobelprize_clean)
+```
+
+
+```{r, message=FALSE}
+# summary of data
+summary(nobelprize_clean)
+```
+
+
+# Results
+
+To gain an overview of the berth of Nobel Prizes awarded, I first analyzed the distribution of Nobel Prize laureates across the globe.
+
+
+```{r, message=FALSE, echo=FALSE, fig.width=10, fig.height=5}
+world = ne_countries(scale='medium', returnclass='sf')
+nobelprize_world = world %>% 
+  left_join(nobelprize_clean,
+            by = c('iso_a3' = 'country_code')) %>% 
+  mutate(country_code = iso_a3)
+nobelprize_world %>% 
+  count(country) %>% 
+  ggplot(aes(fill=n)) +
+  geom_sf() +
+  theme_linedraw() +
+  ggtitle('Distribution of Nobel Prize Laureates') +
+  labs(caption='One instance of Tibet removed from data set.') +
+  scale_fill_continuous(name='Nobel Prize Laureate Count',
+                        low = "pink",
+                        high = "orchid4") +
+  coord_sf(ylim = c(-50, 90))
+```
+
+
+Evident by the map plot, the United States and Europe are very prominent places for Nobel Prize laureates, most likely due to the level of development and strong emphasis placed on academia and research. 
+
+To continue, I opted to narrow my look at the distribution of this global data by extracting the top five countries with the highest numbers of Nobel Prize laureates.
+
+
+```{r, message=FALSE, echo=FALSE}
+nobelprize_clean %>% 
+  count(country) %>% 
+  arrange(-n) %>% 
+  head(5) %>% 
+  kable(col.names = c('Country', 'Number of Laureates'))
+```
+
+
+```{r, message=FALSE, echo=FALSE}
+nobelprize_clean %>% 
+  filter(country %in% c('United States', 'United Kingdom', 'Germany', 'France', 'Sweden')) %>% 
+  count(country) %>% 
+  ggplot(aes(y = reorder(country, n),
+             x = n,
+             label = n,
+             fill = 'skyblue')) +
+  geom_col() +
+  geom_label(fill = 'white') +
+  scale_fill_manual(values = 'skyblue') +
+  labs(x = 'Number of Laureates',
+       y = 'Country',
+       title = 'Nobel Prize Laureates Per Country',
+       subtitle = 'of the top five countries with most laureates') +
+  theme_gdocs() +
+  theme(legend.position = 'none')
+```
+
+
+From this bar chart, it appears that the continents with the greatest numbers of laureates are North America and Europe, continents found in each of the hemispheres, comprising two of the most developed land masses. 
+
+To further analyze the divide between laureates by Eastern and Western Hemisphere, I plotted the continents by their number of Nobel Prize laureates.
+
+
+```{r, message=FALSE, echo=FALSE}
+nobelprize_clean %>% 
+  count(continent) %>% 
+  arrange(-n) %>% 
+  kable(col.names = c('Continent', 'Number of Laureates'))
+```
+
+
+```{r, message=FALSE, echo=FALSE}
+nobelprize_clean %>% 
+  count(continent, na.rm = TRUE) %>% 
+  ggplot(aes(y = reorder(continent, n),
+             x = n,
+             label = n,
+             fill = 'skyblue')) +
+  geom_col() +
+  geom_label(fill = 'white') +
+  scale_fill_manual(values = 'skyblue') +
+  labs(x = 'Number of Laureates',
+       y = 'Continent',
+       title = 'Nobel Prize Laureates Per Continent',
+       caption='Tibet removed from graphed dataset, Asia should have 80 laureates') +
+  theme_gdocs() +
+  theme(legend.position = 'none')
+```
+
+
+In conclusion of Nobel Prize background, the Western Hemisphere appears to have more Nobel Prize laureates than the Eastern Hemisphere, perhaps simply due to the population distribution as roughly 82% of the world's population reside in the Eastern Hemisphere, while an estimated 18% reside in the Western Hemisphere.
+
+Overall, with a total of 1,142 Nobel Prizes awarded globally, I aimed to determine the percentage of women laureates to confirm my hypothesis of an existing Nobel gender gap in hopes of undergoing further analysis.
+
+
+```{r, message=FALSE, echo=FALSE}
+gender = c('Man', 'Organization', 'Woman')
+percentage = c(93.17, 0.88, 5.95)
+nobel_gender = data.frame(gender, percentage)
+nobel_gender
+pie(nobel_gender$percentage,
+    labels=paste(nobel_gender$gender, sep = ' ', nobel_gender$percentage, '%'),
+    col =rainbow(length(nobel_gender$percentage)),
+    main = 'Distribution of Nobel Prize Laureates by Gender')
+```
+
+
+With barely 6.00% of the Nobel Prize laureate population comprising women, I was curious to analyze the trend between decade and women Prize recipients to assess if the improvement of women's rights across time has had an impact on the number of women awarded with the Prizes.
+
+
+```{r, message=FALSE, echo=FALSE}
+nobelprize_clean %>% 
+  filter(gender == 'Woman') %>%
+  count(decade) %>%
+  ggplot(aes(x=decade,
+             y = n,
+             label=n)) +
+  theme_gdocs() +
+  geom_label(fill = 'pink') +
+  labs(y = 'Number of Laureates', 
+       x = '',
+       title = 'Women Nobel Prize Laureates Across the Decades',
+       legend.position=none)
+```
+
+
+It appears that across the timeline, the number of women Nobel Prize laureates, generally, increases as the decade increases. It is plausible to believe that with advancements in women's rights and opportunities, surges in women involved in science, technology, mathematics, literature, and other career avenues directly led to abundances in those eligible for these awards due to their new opportunities outside of the traditional women's roles of stay-at-home wife, secretary, or nurse.
+
+However, just because there is evidence of women becoming slightly more likely to win Nobel Prizes, it does not determine our the Nobel gender gap entirely. For a follow-up into investigating potential sources of cultural bias in this gap in laureates, I analyzed the categories of the Nobel Prize and to which of the subjects were most awarded to men and to women.
+
+
+```{r, message=FALSE, echo=FALSE, fig.width=10}
+nobelprize_clean %>%
+  filter(gender != 'Organization') %>% 
+  group_by(category) %>% 
+  count(gender) %>% 
+  ggplot(aes(y = category,
+             x = n,
+             fill = gender,
+             label = n)) +
+  geom_col(fill='skyblue') +
+  geom_label(fill = 'white') +
+  labs(y = 'Prize Category',
+       x = 'Number of Laureates',
+       title = 'Nobel Prize Laureates by Category',
+       fill = 'Gender') +
+  facet_wrap(~gender)
+```
+
+
+Women receive the most Nobel Prizes in the two categories that men are awarded the Prizes the least amount in - peace and literature. Whether this is due to a gender bias in which women are believed to be more inclined for the "softer" or social sciences, like literature and peace studies, can not explicitly be stated by the bar charts, but it certainly makes it apparent that work by men in the physical or natural sciences is more heavily focused upon, or at the very least more consistently recognized on the global scale in comparison to women.
+
+
+# Conclusion
+
+
+To support the hypothesis of the gender gap in Nobel Prize laureates, quantitative analysis was conducted on variables including geography, time, and Prize category to develop plausible evidence as to why this disparity exists and answer the following questions:
+
+1. Which country has the most Nobel Prize laureates?
+1. Which continent has the most Nobel Prize laureates?
+1. Of the total laureates, what percentage are women?
+1. Is there a correlation between the decade and the number of women laureates?
+1. Which category of the six Nobel Prizes is most awarded to women and to men?
+
+When analyzing Nobel Prize laureates by country and continent, there is graphical evidence of developed countries producing more Nobel Prize laureates than developing countries, as well as a trend of more Nobel Prize laureates in the Eastern Hemisphere than the Western Hemisphere, most likely due to the greater percentage of population residing there. Although the Nobel gender gap cannot be explained from this data, it surely shows that there is a tendency for women residing in Europe or America to have increased odds and/or opportunities to win an award. Yet, with an estimated 50.80% women population in the United States and an estimated 51.00% women population in Europe it makes it strange that a gap still persists so heavily in today's age.
+
+I next analyzed the number of women laureates by time in order to visualize the effects of the progression of women's rights on the Nobel gender gap. There is a generally positive trend in the number of women recipients in association with increasing decade, allowing me to infer that with advancements in women's rights through political, economic, and social reforms and freedoms, that women obtained the tools and positions necessary to constitute their research, discoveries, and activism that they could then be awarded for as they entered the same races as men had always had the ability to enter. However, I did find it interesting that despite boasting numbers much fewer than that of men in terms of laureates, the first woman to receive a Prize, Marie Curie, did earn her achievement in 1903, only two years after the first Nobel Prizes were awarded, somewhat altering my beliefs around my hypothesis that although women's rights improvements were a necessity for raising the number of female Nobel Prize laureates, that women were considered for the Prizes since the inception and not suddenly in the midst of the awardings in a later decade when women's rights were much more established as I had previously believed might be a trend in the data.
+
+With an understanding that generation did, to a degree, affect the Nobel gender gap, I analyzed the six Nobel Prize categories (physiology/medicine, physics, peace, literature, economics, and chemistry) to visualize any trends in category laureates by gender. Almost ironically, women laureates hold the highest number of awards in the categories of peace and literature, whereas those categories are two of the lowest received categories for men. The bias of women favoring, or expected to favor, "softer" skilled work, such as peace studies and literature did not go unnoticed on me, especially in regard to men's dearth of awards in those categories. Perhaps, there is an intrinsic bias in the categories women and men are to be awarded for, favoring the social sciences for women and the physical or natural sciences for men, perpetuating the antiquated ideologies of gender roles. At the very least, it is plausible that women are, and were more commonly historically, encouraged to find work in these sectors, leading to gaps in the number of women awarded Prizes in the sciences or maths due to the low percentages of women involved in these types of work, limiting their opportunities for Prize eligibility. 
+
+However, upon research, even presently, with women accounting for less than 25.00% of those working in the natural and applied sciences, 35% of those working in economics (the same percentage as the early 1980's), and just over 36.00% of those working in medicine, opportunities for research and innovation are outnumbered by their male counterparts. Interestingly, though, women in literature still consist of under 40.00% of the total published work and with an average of 25.00% of those working in peace activism (percentages summed from the roles of negotiators, mediators, and signatories), women aren't necessarily outnumbering men in these fields either. So perhaps, as women are outnumbered in virtually every field, the Nobel gender gap just circles back to pre-existing gender bias that permeates not only the current work and education climates, but the opportunities afforded to women who dare to serve outside of their normative roles. 
+
+In future studies, I would like to analyze the panels that present these Prizes to ascertain if the judges of those eligible may house any pre-existing biases to support my conclusion from this present study. If many of the panelists are of a certain gender, race, or age, or perhaps depending upon political or social alignments or country of residence, there could be increased evidence for bias in the decision-making of the awards, furthering my hypothesis that there is not only a gender gap in the Prizes, but perhaps a racial or socio-cultural gap, as well.
+
+
+# References
+
+https://www.census.gov/prod/cen2010/briefs/c2010br-03.pdf
+https://www.catalyst.org/research/women-in-science-technology-engineering-and-mathematics-stem/
+https://www.nytimes.com/2018/02/02/business/why-womens-voices-are-scarce-in-economics.html
+https://www.aamc.org/news-insights/nation-s-physician-workforce-evolves-more-women-bit-older-and-toward-different-specialties
+https://www.forbes.com/sites/adamrowe1/2018/06/18/male-writers-over-represented-vida-2017/?sh=2dbfc7ac4db1
+https://www.cfr.org/article/new-data-womens-roles-peace-table
