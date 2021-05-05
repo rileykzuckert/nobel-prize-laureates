@@ -1,5 +1,5 @@
 # Nobel Prize Laureates
-Analysis and visualizations of the Nobel Prize laureate gender gap
+Analysis, visualizations, and markdown of the Nobel Prize laureate gender gap
 
 Programming Language: R
 
